@@ -1,0 +1,71 @@
+
+FROM selenium/standalone-chrome:3.13.0-californium
+
+USER root
+
+WORKDIR /app
+
+ENV JDK_DIR /usr/local/jdk
+ENV JAVA_VERSION 1.8.0_241
+
+# Install jdk
+wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u141-b15/336fa29ff2bb4ef291e347e091f7f4a7/jdk-8u141-linux-x64.rpm
+sudo yum install -y jdk-8u141-linux-x64.rpm
+java -version
+
+#to add path for java
+ vim /etc/profile
+
+export JAVA_HOME=/opt/jdk1.8.0_151
+export JRE_HOME=/opt/jdk1.8.0_151/jre
+export PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin
+
+#xvfb installation
+
+ yum -y install xorg-x11-server-Xvfb
+ cd bin
+ chmod +x xvfb-run
+ cp xvfb-run /usr/local/bin/
+
+#chrome installation
+
+curl https://intoli.com/install-google-chrome.sh
+mv /usr/bin/google-chrome-stable /usr/bin/google-chrome
+google-chrome --version && which google-chrome
+
+#chromeDriver installation
+
+wget https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip
+unzip chromedriver_linux64.zip
+
+#to set path for chrome driver
+sudo mv chromedriver /usr/bin/chromedriver
+sudo chown root:root /usr/bin/chromedriver
+sudo chmod +x /usr/bin/chromedriver
+
+#selenium standalone server install
+wget https://selenium-release.storage.googleapis.com/3.13/selenium-server-standalone-3.13.0.jar
+
+# Bundle app source
+COPY . .
+
+# We don't expose port 4444 so people don't get confused if the accidentally
+# try to use the backing Selenium server
+EXPOSE 4545
+
+#commands to run
+
+export CLASSPATH=".:selenium-server-standalone-3.13.0.jar"
+javac TecAdminSeleniumTest.java
+java TecAdminSeleniumTest
+
+# We have to combine these because there can only be one CMD
+# and it is overridden from the base images.
+#
+# Start the Selenium server
+# This is copied over https://github.com/SeleniumHQ/docker-selenium/blob/20995d207b1e8d1eef09d4f3eba30cb7ec65334f/StandaloneChrome/Dockerfile#L13
+# And is normally run as a CMD here, https://github.com/SeleniumHQ/docker-selenium/blob/20995d207b1e8d1eef09d4f3eba30cb7ec65334f/NodeBase/Dockerfile#L117
+#
+# And then start the app
+
+https://localhost:4545
